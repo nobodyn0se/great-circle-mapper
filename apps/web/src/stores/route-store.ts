@@ -19,7 +19,7 @@ type AppState = {
   commitDraft: () => void;
   removeRoute: (id: string) => void;
   setUnits: (units: DistanceUnit) => void;
-  loadRoutesFromCodes: (routeCodes: string[][]) => void;
+  loadRoutesFromCodes: (routeCodes: string[][], options?: { append?: boolean }) => void;
   initFromUrl: () => Promise<void>;
 };
 
@@ -97,20 +97,25 @@ export const useRouteStore = create<AppState>((set, get) => ({
     syncUrl(get().routes, units);
   },
 
-  loadRoutesFromCodes: (routeCodes) => {
+  loadRoutesFromCodes: (routeCodes, options?: { append?: boolean }) => {
+    const existingRoutes = get().routes;
     const unknown: string[] = [];
-    const routes: Route[] = [];
+    const newRoutes: Route[] = [];
 
     for (const codes of routeCodes) {
       const { resolved, unknown: missing } = airportIndex.resolveCodes(codes);
       unknown.push(...missing);
       if (resolved.length >= 2) {
-        routes.push(buildRoute(resolved));
+        newRoutes.push(buildRoute(resolved));
       }
     }
 
-    set({ routes, unknownCodes: unknown });
-    syncUrl(routes, get().units);
+    const nextRoutes = options?.append
+      ? [...existingRoutes, ...newRoutes]
+      : newRoutes;
+
+    set({ routes: nextRoutes, unknownCodes: unknown });
+    syncUrl(nextRoutes, get().units);
   },
 
   initFromUrl: async () => {

@@ -26,7 +26,7 @@ export function RouteInput() {
 
     if (routeCodes.length === 0) return;
 
-    loadRoutesFromCodes(routeCodes);
+    loadRoutesFromCodes(routeCodes, { append: true });
     clearDraft();
     setRawInput("");
   };
