@@ -4,8 +4,8 @@ import { RouteList } from "@/features/routes/RouteList";
 import { SearchPane } from "@/features/search/SearchPane";
 import { useRouteStore } from "@/stores/route-store";
 
-const MapView = lazy(() =>
-  import("@/features/map/MapView").then((module) => ({ default: module.MapView })),
+const CesiumView = lazy(() =>
+  import("@/features/map/CesiumView").then((module) => ({ default: module.CesiumView })),
 );
 
 export function App() {
@@ -52,7 +52,7 @@ export function App() {
             </div>
           }
         >
-          <MapView />
+          <CesiumView />
         </Suspense>
       </main>
     </div>

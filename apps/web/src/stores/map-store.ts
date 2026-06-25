@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type MapProjection = "globe" | "mercator";
+export type MapProjection = "globe" | "mercator"; // globe = 3D, mercator = Cesium 2D flat map
 
 const STORAGE_KEY = "gcm-map-projection";
 
