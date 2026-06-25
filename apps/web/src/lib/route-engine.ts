@@ -1,6 +1,4 @@
-import type { FeatureCollection, LineString } from "geojson";
 import { distance } from "@turf/distance";
-import { greatCircle } from "@turf/great-circle";
 import { point } from "@turf/helpers";
 import type { Airport, Route, RouteSegment } from "@gcm/shared";
 
@@ -27,40 +25,6 @@ export function buildRoute(airports: Airport[], id?: string): Route {
     segments,
     totalKm,
   };
-}
-
-export function buildRouteGeoJson(routes: Route[]): FeatureCollection {
-  const features = routes.flatMap((route, routeIndex) => {
-    const color = ROUTE_COLORS[routeIndex % ROUTE_COLORS.length]!;
-
-    return route.segments.map((segment, segmentIndex) => {
-      const fromPoint = point([segment.from.lon, segment.from.lat]);
-      const toPoint = point([segment.to.lon, segment.to.lat]);
-      const arc = greatCircle(fromPoint, toPoint, {
-        npoints: Math.max(128, Math.ceil(segment.distanceKm / 50)),
-      });
-
-      const geometry = arc.geometry as LineString;
-      const coordinates = Array.isArray(geometry.coordinates[0]?.[0])
-        ? (geometry.coordinates as unknown as number[][][]).flat()
-        : geometry.coordinates;
-
-      return {
-        type: "Feature" as const,
-        properties: {
-          routeId: route.id,
-          segmentIndex,
-          color,
-        },
-        geometry: {
-          type: "LineString" as const,
-          coordinates,
-        },
-      };
-    });
-  });
-
-  return { type: "FeatureCollection", features };
 }
 
 export function routeName(airports: Airport[]): string {

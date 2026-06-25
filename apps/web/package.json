@@ -11,9 +11,11 @@
     "typecheck": "tsc -b --noEmit"
   },
   "dependencies": {
+    "@deck.gl/core": "^9.3.4",
+    "@deck.gl/layers": "^9.3.4",
+    "@deck.gl/mapbox": "^9.3.4",
     "@gcm/shared": "workspace:*",
     "@turf/distance": "^7.2.0",
-    "@turf/great-circle": "^7.2.0",
     "@turf/helpers": "^7.2.0",
     "maplibre-gl": "^5.6.0",
     "minisearch": "^7.1.2",

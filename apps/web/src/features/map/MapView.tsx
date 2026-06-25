@@ -1,17 +1,19 @@
 import { useEffect, useMemo, useRef } from "react";
+import { MapboxOverlay } from "@deck.gl/mapbox";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { buildRouteGeoJson } from "@/lib/route-engine";
+import { buildRouteLayers, createRouteDeckLayers } from "@/lib/route-deck-layers";
 import { allMapAirports, useRouteStore } from "@/stores/route-store";
 import { useMapStore } from "@/stores/map-store";
 import { ProjectionToggle } from "@/features/map/ProjectionToggle";
-import { applyProjectionAndSky, setupRouteLayers } from "@/features/map/map-projection";
+import { applyProjectionAndSky } from "@/features/map/map-projection";
 
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 
 export function MapView() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
+  const deckOverlayRef = useRef<MapboxOverlay | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
 
   const routes = useRouteStore((state) => state.routes);
@@ -23,7 +25,7 @@ export function MapView() {
     [routes, draftAirports],
   );
 
-  const routeGeoJson = useMemo(() => buildRouteGeoJson(routes), [routes]);
+  const routeLayers = useMemo(() => buildRouteLayers(routes), [routes]);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -36,17 +38,26 @@ export function MapView() {
       zoom: initialProjection === "globe" ? 1 : 1.5,
     });
 
+    const deckOverlay = new MapboxOverlay({ interleaved: false, layers: [] });
+    deckOverlayRef.current = deckOverlay;
+
     map.addControl(new maplibregl.NavigationControl(), "top-right");
 
     map.on("style.load", () => {
       applyProjectionAndSky(map, useMapStore.getState().projection);
-      setupRouteLayers(map);
+      if (!map.hasControl(deckOverlay)) {
+        map.addControl(deckOverlay);
+      }
     });
 
     mapRef.current = map;
     return () => {
       markersRef.current.forEach((marker) => marker.remove());
       markersRef.current = [];
+      if (map.hasControl(deckOverlay)) {
+        map.removeControl(deckOverlay);
+      }
+      deckOverlayRef.current = null;
       map.remove();
       mapRef.current = null;
     };
@@ -68,17 +79,13 @@ export function MapView() {
   }, [projection]);
 
   useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
+    const overlay = deckOverlayRef.current;
+    if (!overlay) return;
 
-    const updateRoutes = () => {
-      const source = map.getSource("routes") as maplibregl.GeoJSONSource | undefined;
-      source?.setData(routeGeoJson);
-    };
-
-    if (map.isStyleLoaded()) updateRoutes();
-    else map.once("style.load", updateRoutes);
-  }, [routeGeoJson]);
+    overlay.setProps({
+      layers: createRouteDeckLayers(routeLayers.paths, routeLayers.arcs),
+    });
+  }, [routeLayers]);
 
   useEffect(() => {
     const map = mapRef.current;

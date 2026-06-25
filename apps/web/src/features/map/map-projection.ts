@@ -16,25 +16,3 @@ export function applyProjectionAndSky(map: maplibregl.Map, projection: MapProjec
     });
   }
 }
-
-export function setupRouteLayers(map: maplibregl.Map): void {
-  if (!map.getSource("routes")) {
-    map.addSource("routes", {
-      type: "geojson",
-      data: { type: "FeatureCollection", features: [] },
-    });
-  }
-
-  if (!map.getLayer("routes-line")) {
-    map.addLayer({
-      id: "routes-line",
-      type: "line",
-      source: "routes",
-      paint: {
-        "line-color": ["get", "color"],
-        "line-width": 2.5,
-        "line-opacity": 0.9,
-      },
-    });
-  }
-}
