@@ -25,6 +25,7 @@ export type RouteSegment = {
   from: Airport;
   to: Airport;
   distanceKm: number;
+  typicalBlockMinutes: number;
 };
 
 export type Route = {
@@ -32,6 +33,7 @@ export type Route = {
   airports: Airport[];
   segments: RouteSegment[];
   totalKm: number;
+  totalBlockMinutes: number;
 };
 
 export type DistanceUnit = "nm" | "km" | "mi";
@@ -79,3 +81,9 @@ export function formatDistance(km: number, unit: DistanceUnit): string {
 export function convertDistance(km: number, unit: DistanceUnit): number {
   return unit === "nm" ? km / 1.852 : unit === "mi" ? km / 1.609344 : km;
 }
+
+export {
+  estimateTypicalBlockMinutes,
+  formatFlightTime,
+  FLIGHT_TIME_ASSUMPTIONS,
+} from "./flight-time";

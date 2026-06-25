@@ -1,5 +1,18 @@
-import { formatDistance } from "@gcm/shared";
+import { FLIGHT_TIME_ASSUMPTIONS, formatDistance, formatFlightTime } from "@gcm/shared";
 import { useRouteStore } from "@/stores/route-store";
+
+function FlightTimeHint() {
+  return (
+    <button
+      type="button"
+      className="ml-1 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] leading-none text-slate-400 hover:text-slate-200"
+      title={FLIGHT_TIME_ASSUMPTIONS}
+      aria-label="Flight time assumptions"
+    >
+      i
+    </button>
+  );
+}
 
 export function RouteList() {
   const routes = useRouteStore((state) => state.routes);
@@ -62,17 +75,31 @@ export function RouteList() {
                   <span>
                     {from} – {to}
                   </span>
-                  <span className="font-mono text-slate-200">
+                  <span className="flex items-center font-mono text-slate-200">
                     {formatDistance(segment.distanceKm, units)}
+                    <span className="mx-1.5 text-slate-500">·</span>
+                    <span className="text-slate-300">
+                      ~{formatFlightTime(segment.typicalBlockMinutes)}
+                    </span>
+                    <FlightTimeHint />
                   </span>
                 </li>
               );
             })}
           </ul>
 
-          <div className="mt-2 flex justify-between border-t border-slate-700 pt-2 text-sm font-medium text-white">
-            <span>Total</span>
-            <span className="font-mono">{formatDistance(route.totalKm, units)}</span>
+          <div className="mt-2 space-y-1 border-t border-slate-700 pt-2 text-sm font-medium text-white">
+            <div className="flex justify-between gap-4">
+              <span>Total</span>
+              <span className="font-mono">{formatDistance(route.totalKm, units)}</span>
+            </div>
+            <div className="flex justify-between gap-4 text-slate-300">
+              <span>Total flying time</span>
+              <span className="flex items-center font-mono text-slate-200">
+                ~{formatFlightTime(route.totalBlockMinutes)}
+                <FlightTimeHint />
+              </span>
+            </div>
           </div>
         </article>
       ))}

@@ -1,6 +1,7 @@
 import { distance } from "@turf/distance";
 import { point } from "@turf/helpers";
 import type { Airport, Route, RouteSegment } from "@gcm/shared";
+import { estimateTypicalBlockMinutes } from "@gcm/shared";
 
 const ROUTE_COLORS = ["#3b82f6", "#22c55e", "#f97316", "#a855f7", "#ef4444"];
 
@@ -14,16 +15,26 @@ export function buildRoute(airports: Airport[], id?: string): Route {
     const toPoint = point([to.lon, to.lat]);
     const distanceKm = distance(fromPoint, toPoint, { units: "kilometers" });
 
-    segments.push({ from, to, distanceKm });
+    segments.push({
+      from,
+      to,
+      distanceKm,
+      typicalBlockMinutes: estimateTypicalBlockMinutes(distanceKm),
+    });
   }
 
   const totalKm = segments.reduce((sum, segment) => sum + segment.distanceKm, 0);
+  const totalBlockMinutes = segments.reduce(
+    (sum, segment) => sum + segment.typicalBlockMinutes,
+    0,
+  );
 
   return {
     id: id ?? `route-${crypto.randomUUID()}`,
     airports,
     segments,
     totalKm,
+    totalBlockMinutes,
   };
 }
 
