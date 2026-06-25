@@ -1,0 +1,12 @@
+{
+  "version": "2026-06-24",
+  "source": "https://davidmegginson.github.io/ourairports-data/airports.csv",
+  "counts": {
+    "searchable": 40809,
+    "byCode": 49114
+  },
+  "files": {
+    "search": "airports.search.json.gz",
+    "byCode": "airports.by-code.json.gz"
+  }
+}

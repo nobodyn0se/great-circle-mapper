@@ -1,0 +1,16 @@
+{
+  "name": "great-circle-mapper",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter @gcm/web dev",
+    "build": "pnpm --filter @gcm/web build",
+    "data:build": "pnpm --filter @gcm/data-pipeline build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  },
+  "packageManager": "pnpm@10.12.1"
+}
