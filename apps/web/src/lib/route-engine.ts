@@ -37,7 +37,7 @@ export function buildRouteGeoJson(routes: Route[]): FeatureCollection {
       const fromPoint = point([segment.from.lon, segment.from.lat]);
       const toPoint = point([segment.to.lon, segment.to.lat]);
       const arc = greatCircle(fromPoint, toPoint, {
-        npoints: Math.max(64, Math.ceil(segment.distanceKm / 100)),
+        npoints: Math.max(128, Math.ceil(segment.distanceKm / 50)),
       });
 
       const geometry = arc.geometry as LineString;

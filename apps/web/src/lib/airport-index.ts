@@ -12,10 +12,6 @@ async function fetchGzJson<T>(url: string): Promise<T> {
   const bytes = new Uint8Array(buffer);
   const isGzip = bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b;
 
-  // #region agent log
-  fetch('http://127.0.0.1:7806/ingest/2e95b606-e272-4bbe-93c9-63d324d43a18',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'d29f80'},body:JSON.stringify({sessionId:'d29f80',location:'airport-index.ts:fetchGzJson',message:'fetch response inspected',data:{url,isGzip,byteLength:bytes.length,contentEncoding:response.headers.get('content-encoding')},timestamp:Date.now(),runId:'post-fix',hypothesisId:'H3'})}).catch(()=>{});
-  // #endregion
-
   let text: string;
   if (isGzip) {
     const ds = new DecompressionStream("gzip");
@@ -70,9 +66,6 @@ class AirportIndex {
 
     this.airports = airports;
     this.byCode = new Map(Object.entries(byCodeRecord));
-    // #region agent log
-    fetch('http://127.0.0.1:7806/ingest/2e95b606-e272-4bbe-93c9-63d324d43a18',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'d29f80'},body:JSON.stringify({sessionId:'d29f80',location:'airport-index.ts:load',message:'index loaded',data:{airportCount:airports.length,byCodeSize:this.byCode.size,jfk:this.byCode.has('JFK'),lhr:this.byCode.has('LHR'),dxb:this.byCode.has('DXB')},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{});
-    // #endregion
 
     const documents: SearchDocument[] = airports.map((row, id) => ({
       id,

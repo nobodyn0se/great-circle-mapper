@@ -26,10 +26,6 @@ export function RouteInput() {
 
     if (routeCodes.length === 0) return;
 
-    // #region agent log
-    fetch('http://127.0.0.1:7806/ingest/2e95b606-e272-4bbe-93c9-63d324d43a18',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'d29f80'},body:JSON.stringify({sessionId:'d29f80',location:'RouteInput.tsx:handleSubmit',message:'parsed route input',data:{trimmed,routeCodes},timestamp:Date.now(),hypothesisId:'H2'})}).catch(()=>{});
-    // #endregion
-
     loadRoutesFromCodes(routeCodes);
     clearDraft();
     setRawInput("");
