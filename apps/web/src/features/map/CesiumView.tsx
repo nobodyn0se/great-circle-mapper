@@ -81,9 +81,6 @@ export function CesiumView() {
     const container = containerRef.current;
     const onResize = () => {
       viewer.resize();
-      // #region agent log
-      fetch('http://127.0.0.1:7806/ingest/2e95b606-e272-4bbe-93c9-63d324d43a18',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'d29f80'},body:JSON.stringify({sessionId:'d29f80',location:'CesiumView.tsx:resize',message:'viewer resized',data:{width:container.clientWidth,height:container.clientHeight},timestamp:Date.now(),runId:'post-fix',hypothesisId:'H6'})}).catch(()=>{});
-      // #endregion
     };
 
     onResize();
@@ -103,7 +100,7 @@ export function CesiumView() {
 
         route.segments.forEach((segment, segmentIndex) => {
           viewer.entities.add({
-            id: `route-${route.id}-${segmentIndex}`,
+            id: `${route.id}-seg-${segmentIndex}`,
             polyline: {
               positions: Cartesian3.fromDegreesArray([
                 segment.from.lon,
@@ -147,12 +144,10 @@ export function CesiumView() {
       if (airports.length >= 2) {
         fitCameraToAirports(viewer, airports, "auto");
       }
+      setMapError(null);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       setMapError(message);
-      // #region agent log
-      fetch('http://127.0.0.1:7806/ingest/2e95b606-e272-4bbe-93c9-63d324d43a18',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'d29f80'},body:JSON.stringify({sessionId:'d29f80',location:'CesiumView.tsx:entities',message:'entity update failed',data:{error:message,airportCount:airports.length},timestamp:Date.now(),runId:'post-fix-v2',hypothesisId:'H7'})}).catch(()=>{});
-      // #endregion
     }
   }, [viewer, routes, airports]);
 

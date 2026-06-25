@@ -20,7 +20,7 @@ export function buildRoute(airports: Airport[], id?: string): Route {
   const totalKm = segments.reduce((sum, segment) => sum + segment.distanceKm, 0);
 
   return {
-    id: id ?? `route-${Date.now()}`,
+    id: id ?? `route-${crypto.randomUUID()}`,
     airports,
     segments,
     totalKm,
