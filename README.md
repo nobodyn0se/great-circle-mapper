@@ -65,27 +65,28 @@ git remote add origin git@github.com:YOUR_USER/great-circle-mapper.git
 git push -u origin main
 ```
 
-#### 2. Create the Pages project
+#### 2. Connect via Workers Builds (recommended)
 
-In the [Cloudflare dashboard](https://dash.cloudflare.com/) → **Workers & Pages** → **Create** → **Pages** → **Connect to Git** → select the repo.
+In the [Cloudflare dashboard](https://dash.cloudflare.com/) → **Workers & Pages** → **Create** → **Worker** → **Connect to Git** → select the repo.
 
-**Important:** If you used **Workers Builds** (deploy command defaults to `npx wrangler deploy`), you must change the settings below. Running `wrangler deploy` from the monorepo root causes:
-
-`The Wrangler application detection logic has been run in the root of a workspace instead of targeting a specific project`
+This app deploys as a **Worker with static assets** (`wrangler deploy`), not `wrangler pages deploy`. Workers Builds auto-generates an API token with Worker permissions; Pages deploy requires a separate **Cloudflare Pages — Edit** token and will fail with `Authentication error [code: 10000]` if you use `pages deploy` here.
 
 | Setting | Value |
 |---------|--------|
 | Production branch | `main` |
-| **Root directory** | **`apps/web`** |
-| Build command | `cd ../.. && pnpm install --frozen-lockfile && pnpm --filter @gcm/web build` |
-| **Deploy command** | **`pnpm run deploy:pages`** |
-| Build output directory | *(leave empty when using deploy command)* |
+| **Root directory** | **`/`** |
+| Build command | `pnpm install --frozen-lockfile && pnpm build` |
+| **Deploy command** | **`pnpm run deploy`** |
 
-Alternatively, use **classic Pages** (no deploy command): root `/`, build `pnpm install && pnpm build`, output `apps/web/dist`, framework **None** — Cloudflare publishes `dist` automatically with no Wrangler step.
+**Do not** set `CLOUDFLARE_API_TOKEN` in build variables unless you create a custom token — the auto-generated Workers Builds token is enough for `wrangler deploy`. A manually added token without Worker permissions will break deploy.
 
-Node.js **20** is pinned via [`.node-version`](.node-version). pnpm is detected from `packageManager` in [`package.json`](package.json).
+Node.js **22** is pinned via [`.node-version`](.node-version) (required by Wrangler 4.87+). pnpm is detected from `packageManager` in [`package.json`](package.json).
 
 [`apps/web/wrangler.toml`](apps/web/wrangler.toml) must stay inside `apps/web`, not the repository root.
+
+#### 2b. Classic Pages (alternative, no deploy command)
+
+**Pages** → **Connect to Git** → root `/`, build `pnpm install --frozen-lockfile && pnpm build`, output `apps/web/dist`, framework **None**. Cloudflare publishes `dist` automatically — no Wrangler deploy step and no deploy command field.
 
 #### 3. Environment variables (optional)
 
@@ -103,7 +104,7 @@ Apply to **Production** (and **Preview** if desired), then trigger a new deploym
 
 | Secret | Purpose |
 |--------|---------|
-| `CLOUDFLARE_API_TOKEN` | [API token](https://developers.cloudflare.com/fundamentals/api/get-started/create-token/) with **Cloudflare Pages — Edit** |
+| `CLOUDFLARE_API_TOKEN` | [API token](https://developers.cloudflare.com/fundamentals/api/get-started/create-token/) with **Workers Scripts — Edit** (or **Edit Cloudflare Workers** template) |
 | `CLOUDFLARE_ACCOUNT_ID` | Account ID from Cloudflare dashboard → **Workers & Pages** → right sidebar |
 | `VITE_CESIUM_ION_TOKEN` | Optional; Cesium Ion basemap at build time |
 
