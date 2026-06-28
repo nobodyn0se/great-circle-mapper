@@ -78,6 +78,8 @@ This app deploys as a **Worker with static assets** (`wrangler deploy`), not `wr
 | Build command | `pnpm install --frozen-lockfile && pnpm build` |
 | **Deploy command** | **`pnpm run deploy`** |
 
+After deploy succeeds, the log should include **`Read 452 files from the assets directory`** (count may vary slightly). If you see only a tiny upload (~0.35 KiB) with no assets line, static files were not packaged — check that `apps/web/dist` exists before deploy runs.
+
 **Do not** set `CLOUDFLARE_API_TOKEN` in build variables unless you create a custom token — the auto-generated Workers Builds token is enough for `wrangler deploy`. A manually added token without Worker permissions will break deploy.
 
 Node.js **22** is pinned via [`.node-version`](.node-version) (required by Wrangler 4.87+). pnpm is detected from `packageManager` in [`package.json`](package.json).
@@ -108,7 +110,7 @@ Apply to **Production** (and **Preview** if desired), then trigger a new deploym
 | `CLOUDFLARE_ACCOUNT_ID` | Account ID from Cloudflare dashboard → **Workers & Pages** → right sidebar |
 | `VITE_CESIUM_ION_TOKEN` | Optional; Cesium Ion basemap at build time |
 
-The first deploy creates the `great-circle-mapper` Pages project automatically. Skip Option A if you use this workflow.
+The first deploy creates or updates the `great-circle-mapper` Worker automatically. Skip Option A if you use this workflow.
 
 [`apps/web/wrangler.toml`](apps/web/wrangler.toml) lives inside the web app (not the monorepo root) so Wrangler 4 does not treat the workspace root as the project.
 
@@ -118,17 +120,30 @@ The first deploy creates the `great-circle-mapper` Pages project automatically. 
 pnpm install
 pnpm build
 pnpm --filter @gcm/web preview   # http://localhost:4173
+cd apps/web && pnpm exec wrangler deploy --dry-run   # expect ~452 files from dist
 ```
 
 Smoke test: map loads, airport search works, `/?routes=JFK-LHR,BOM-GOI` renders routes and flight times.
 
+### Troubleshooting: site shows "Hello world"
+
+Cloudflare's default Worker template returns plain-text `Hello world`. Your app is a **static asset** deploy — if assets never uploaded, the old template keeps running.
+
+1. **Confirm the URL** — use `https://great-circle-mapper.<subdomain>.workers.dev` (from **Workers & Pages → great-circle-mapper → Domains**), not the bare `https://<subdomain>.workers.dev`.
+2. **Check deploy logs** — after `pnpm run deploy`, look for `Read … files from the assets directory …/apps/web/dist`. No assets line = build output missing or deploy ran from the wrong directory.
+3. **Dashboard worker code** — **Workers & Pages → great-circle-mapper → Edit code**. If you see the default `Hello world` script, it was never replaced. **Retry deployment** from the **Deployments** tab (or push a commit after the deploy script fix).
+4. **Deploy command** must be `pnpm run deploy` (runs `wrangler deploy --assets ./dist` from `apps/web`), not `deploy:pages` or bare `npx wrangler deploy` from the repo root.
+5. **Verify in browser** — `curl -I https://great-circle-mapper.<subdomain>.workers.dev` should show `content-type: text/html`, not `text/plain`.
+
+Changing your **workers.dev subdomain** only changes the hostname; it does not redeploy assets. Retry a deployment after changing the subdomain.
+
 ### Custom domain
 
-Pages → **Custom domains** → add your domain. Enable **Always Use HTTPS**.
+**Workers & Pages → great-circle-mapper → Domains → Add → Custom domain**. Enable **Always Use HTTPS** on the zone.
 
 ### CI
 
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs typecheck, shared unit tests, and a production build on pushes and pull requests to `main`. [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) deploys to Cloudflare Pages when Option B secrets are configured.
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs typecheck, shared unit tests, and a production build on pushes and pull requests to `main`. [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) deploys to Cloudflare Workers when Option B secrets are configured.
 
 ## Project layout
 

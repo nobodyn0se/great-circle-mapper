@@ -9,3 +9,4 @@ dist
 .turbo
 coverage
 apps/web/public/cesiumStatic
+.pnpm-store

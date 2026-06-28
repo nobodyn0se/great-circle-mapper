@@ -8,7 +8,7 @@
     "dev": "node scripts/copy-cesium-assets.mjs && vite",
     "build": "node scripts/copy-cesium-assets.mjs && tsc -b && vite build",
     "preview": "vite preview",
-    "deploy:pages": "wrangler pages deploy dist --project-name=great-circle-mapper",
+    "deploy": "wrangler deploy --assets ./dist",
     "lint": "eslint .",
     "typecheck": "tsc -b --noEmit"
   },
