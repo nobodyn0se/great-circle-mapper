@@ -7,7 +7,8 @@
     "build": "pnpm --filter @gcm/web build",
     "data:build": "pnpm --filter @gcm/data-pipeline build",
     "lint": "pnpm -r lint",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm --filter @gcm/shared test"
   },
   "devDependencies": {
     "typescript": "^5.8.3"
