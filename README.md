@@ -74,8 +74,10 @@ In the [Cloudflare dashboard](https://dash.cloudflare.com/) → **Workers & Page
 | Production branch | `main` |
 | Framework preset | None |
 | Root directory | `/` (repository root) |
-| Build command | `pnpm install && pnpm --filter @gcm/web build` |
+| Build command | `pnpm install && pnpm build` |
 | Build output directory | `apps/web/dist` |
+
+Use **Framework preset: None**. Do not put `wrangler.toml` at the repository root — Wrangler 4 errors on pnpm workspaces there. Build with pnpm only; Wrangler is for Option B (GitHub Actions deploy).
 
 Node.js **20** is pinned via [`.node-version`](.node-version). pnpm is detected from `packageManager` in [`package.json`](package.json).
 
@@ -101,7 +103,7 @@ Apply to **Production** (and **Preview** if desired), then trigger a new deploym
 
 The first deploy creates the `great-circle-mapper` Pages project automatically. Skip Option A if you use this workflow.
 
-[`wrangler.toml`](wrangler.toml) documents the Pages output directory.
+[`apps/web/wrangler.toml`](apps/web/wrangler.toml) lives inside the web app (not the monorepo root) so Wrangler 4 does not treat the workspace root as the project.
 
 ### Verify locally before deploy
 
