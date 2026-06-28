@@ -69,17 +69,23 @@ git push -u origin main
 
 In the [Cloudflare dashboard](https://dash.cloudflare.com/) → **Workers & Pages** → **Create** → **Pages** → **Connect to Git** → select the repo.
 
+**Important:** If you used **Workers Builds** (deploy command defaults to `npx wrangler deploy`), you must change the settings below. Running `wrangler deploy` from the monorepo root causes:
+
+`The Wrangler application detection logic has been run in the root of a workspace instead of targeting a specific project`
+
 | Setting | Value |
 |---------|--------|
 | Production branch | `main` |
-| Framework preset | None |
-| Root directory | `/` (repository root) |
-| Build command | `pnpm install && pnpm build` |
-| Build output directory | `apps/web/dist` |
+| **Root directory** | **`apps/web`** |
+| Build command | `cd ../.. && pnpm install --frozen-lockfile && pnpm --filter @gcm/web build` |
+| **Deploy command** | **`pnpm run deploy:pages`** |
+| Build output directory | *(leave empty when using deploy command)* |
 
-Use **Framework preset: None**. Do not put `wrangler.toml` at the repository root — Wrangler 4 errors on pnpm workspaces there. Build with pnpm only; Wrangler is for Option B (GitHub Actions deploy).
+Alternatively, use **classic Pages** (no deploy command): root `/`, build `pnpm install && pnpm build`, output `apps/web/dist`, framework **None** — Cloudflare publishes `dist` automatically with no Wrangler step.
 
 Node.js **20** is pinned via [`.node-version`](.node-version). pnpm is detected from `packageManager` in [`package.json`](package.json).
+
+[`apps/web/wrangler.toml`](apps/web/wrangler.toml) must stay inside `apps/web`, not the repository root.
 
 #### 3. Environment variables (optional)
 
