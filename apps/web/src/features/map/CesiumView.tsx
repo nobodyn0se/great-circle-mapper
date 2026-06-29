@@ -4,11 +4,15 @@ import {
   Cartesian2,
   Cartesian3,
   Color,
+  ColorMaterialProperty,
+  ConstantPositionProperty,
+  ConstantProperty,
   LabelStyle,
   VerticalOrigin,
   type Viewer,
 } from "cesium";
 import "cesium/Build/Cesium/Widgets/widgets.css";
+import type { Airport, Route } from "@gcm/shared";
 import { ROUTE_COLORS } from "@/lib/route-engine";
 import { allMapAirports, useRouteStore } from "@/stores/route-store";
 import { useMapStore } from "@/stores/map-store";
@@ -21,9 +25,123 @@ import {
   fitCameraToAirports,
 } from "@/features/map/cesium-config";
 
+function segmentEntityId(routeId: string, segmentIndex: number): string {
+  return `${routeId}-seg-${segmentIndex}`;
+}
+
+function airportEntityId(airport: Airport): string {
+  const code = airport.iata || airport.icao;
+  return `airport-${code}-${airport.icao}`;
+}
+
+function isSegmentEntityId(id: string): boolean {
+  return id.includes("-seg-");
+}
+
+function isAirportEntityId(id: string): boolean {
+  return id.startsWith("airport-");
+}
+
+function airportDescription(airport: Airport, code: string): string {
+  return `<strong>${code}</strong><br/>${airport.name}<br/><span style="opacity:.75">${airport.city}, ${airport.country}</span>`;
+}
+
+function syncRouteSegments(viewer: Viewer, routes: Route[]): void {
+  const desiredIds = new Set<string>();
+
+  routes.forEach((route, routeIndex) => {
+    const color = cssColorToCesium(ROUTE_COLORS[routeIndex % ROUTE_COLORS.length]!);
+
+    route.segments.forEach((segment, segmentIndex) => {
+      const id = segmentEntityId(route.id, segmentIndex);
+      desiredIds.add(id);
+
+      const positions = Cartesian3.fromDegreesArray([
+        segment.from.lon,
+        segment.from.lat,
+        segment.to.lon,
+        segment.to.lat,
+      ]);
+
+      const existing = viewer.entities.getById(id);
+      if (existing?.polyline) {
+        existing.polyline.positions = new ConstantProperty(positions);
+        existing.polyline.material = new ColorMaterialProperty(color);
+      } else {
+        viewer.entities.add({
+          id,
+          polyline: {
+            positions,
+            width: 3,
+            material: color,
+            arcType: ArcType.GEODESIC,
+          },
+        });
+      }
+    });
+  });
+
+  for (const entity of viewer.entities.values) {
+    const id = entity.id;
+    if (typeof id === "string" && isSegmentEntityId(id) && !desiredIds.has(id)) {
+      viewer.entities.remove(entity);
+    }
+  }
+}
+
+function syncAirportMarkers(viewer: Viewer, airports: Airport[]): void {
+  const desiredIds = new Set(airports.map(airportEntityId));
+
+  for (const airport of airports) {
+    const code = airport.iata || airport.icao;
+    const id = airportEntityId(airport);
+    const position = Cartesian3.fromDegrees(airport.lon, airport.lat);
+
+    const existing = viewer.entities.getById(id);
+    if (existing) {
+      existing.position = new ConstantPositionProperty(position);
+      if (existing.label) {
+        existing.label.text = new ConstantProperty(code);
+      }
+      existing.description = new ConstantProperty(airportDescription(airport, code));
+    } else {
+      viewer.entities.add({
+        id,
+        position,
+        point: {
+          pixelSize: 12,
+          color: Color.fromCssColorString("#2563eb"),
+          outlineColor: Color.WHITE,
+          outlineWidth: 2,
+        },
+        label: {
+          text: code,
+          font: "12px system-ui, sans-serif",
+          fillColor: Color.WHITE,
+          outlineColor: Color.BLACK,
+          outlineWidth: 2,
+          style: LabelStyle.FILL_AND_OUTLINE,
+          verticalOrigin: VerticalOrigin.BOTTOM,
+          pixelOffset: new Cartesian2(0, -14),
+        },
+        description: airportDescription(airport, code),
+      });
+    }
+  }
+
+  for (const entity of viewer.entities.values) {
+    const id = entity.id;
+    if (typeof id === "string" && isAirportEntityId(id) && !desiredIds.has(id)) {
+      viewer.entities.remove(entity);
+    }
+  }
+}
+
 export function CesiumView() {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<Viewer | null>(null);
+  const hasInitialFitRef = useRef(false);
+  const prevRoutesRef = useRef<Route[]>([]);
   const [viewer, setViewer] = useState<Viewer | null>(null);
   const [mapError, setMapError] = useState<string | null>(null);
 
@@ -93,63 +211,44 @@ export function CesiumView() {
     if (!viewer) return;
 
     try {
-      viewer.entities.removeAll();
-
-      routes.forEach((route, routeIndex) => {
-        const color = cssColorToCesium(ROUTE_COLORS[routeIndex % ROUTE_COLORS.length]!);
-
-        route.segments.forEach((segment, segmentIndex) => {
-          viewer.entities.add({
-            id: `${route.id}-seg-${segmentIndex}`,
-            polyline: {
-              positions: Cartesian3.fromDegreesArray([
-                segment.from.lon,
-                segment.from.lat,
-                segment.to.lon,
-                segment.to.lat,
-              ]),
-              width: 3,
-              material: color,
-              arcType: ArcType.GEODESIC,
-            },
-          });
-        });
-      });
-
-      airports.forEach((airport) => {
-        const code = airport.iata || airport.icao;
-        viewer.entities.add({
-          id: `airport-${code}-${airport.icao}`,
-          position: Cartesian3.fromDegrees(airport.lon, airport.lat),
-          point: {
-            pixelSize: 12,
-            color: Color.fromCssColorString("#2563eb"),
-            outlineColor: Color.WHITE,
-            outlineWidth: 2,
-          },
-          label: {
-            text: code,
-            font: "12px system-ui, sans-serif",
-            fillColor: Color.WHITE,
-            outlineColor: Color.BLACK,
-            outlineWidth: 2,
-            style: LabelStyle.FILL_AND_OUTLINE,
-            verticalOrigin: VerticalOrigin.BOTTOM,
-            pixelOffset: new Cartesian2(0, -14),
-          },
-          description: `<strong>${code}</strong><br/>${airport.name}<br/><span style="opacity:.75">${airport.city}, ${airport.country}</span>`,
-        });
-      });
-
-      if (airports.length >= 2) {
-        fitCameraToAirports(viewer, airports, "auto");
-      }
+      syncRouteSegments(viewer, routes);
       setMapError(null);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       setMapError(message);
     }
-  }, [viewer, routes, airports]);
+  }, [viewer, routes]);
+
+  useEffect(() => {
+    if (!viewer) return;
+
+    try {
+      syncAirportMarkers(viewer, airports);
+      setMapError(null);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setMapError(message);
+    }
+  }, [viewer, airports]);
+
+  useEffect(() => {
+    if (!viewer) return;
+
+    const committedAirports = allMapAirports({ routes, draftAirports: [] });
+    if (committedAirports.length < 2) return;
+
+    if (!hasInitialFitRef.current) {
+      fitCameraToAirports(viewer, committedAirports, "auto");
+      hasInitialFitRef.current = true;
+      prevRoutesRef.current = routes;
+      return;
+    }
+
+    if (prevRoutesRef.current !== routes) {
+      fitCameraToAirports(viewer, committedAirports, "auto");
+      prevRoutesRef.current = routes;
+    }
+  }, [viewer, routes]);
 
   const handleHome = () => {
     if (viewerRef.current) flyHomeView(viewerRef.current, airports);
