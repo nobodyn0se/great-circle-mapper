@@ -1,6 +1,8 @@
 # Great Circle Mapper
 
-Static great-circle route planner built from OurAirports data. No backend — airport search, distance math, and flight-time estimates run entirely in the browser.
+Static route planner built from OurAirports data. No backend — airport search, distance math, and flight-time estimates run entirely in the browser.
+
+Toggle **Great circle** (direct geodesic) or **Airways** (published airway path when nav data is available) in the map controls. Airway mode persists in local storage; without a nav-graph artifact it falls back to great-circle routing.
 
 ## Stack
 
@@ -45,6 +47,10 @@ The pipeline downloads [OurAirports airports.csv](https://davidmegginson.github.
 ICAO resolution uses `ident` → `gps_code` (fixes the v1 bug where `icao_code`-only filtering dropped airports like OMDB/DXB).
 
 Airport `.gz` artifacts are committed to git so production deploys do not need to run `pnpm data:build`. Re-run that command when refreshing OurAirports data.
+
+### Airway routing (future)
+
+Airway mode is wired in the UI and route engine. When `apps/web/public/data/nav-graph.json.gz` is added by a future CIFP/nav-graph pipeline, the app will load it automatically and route along published fixes. Until then, airway mode falls back to great-circle distances and paths.
 
 ## Deployment (Cloudflare Pages)
 

@@ -1,13 +1,31 @@
 import { create } from "zustand";
-import type { Airport, DistanceUnit, Route } from "@gcm/shared";
+import type { Airport, DistanceUnit, Route, RouteMode } from "@gcm/shared";
 import { buildRoute } from "@/lib/route-engine";
+import { ensureNavGraphLoaded } from "@/lib/airway-routing";
 import { readRoutesFromUrl, readUnitsFromUrl, syncUrl } from "@/lib/url-routes";
 import { airportIndex } from "@/lib/airport-index";
+
+const ROUTE_MODE_KEY = "gcm-route-mode";
+
+function readRouteMode(): RouteMode {
+  try {
+    const stored = localStorage.getItem(ROUTE_MODE_KEY);
+    if (stored === "great-circle" || stored === "airway") return stored;
+  } catch {
+    // localStorage unavailable
+  }
+  return "great-circle";
+}
+
+function rebuildRoutes(routes: Route[], mode: RouteMode): Route[] {
+  return routes.map((route) => buildRoute(route.airports, route.id, mode));
+}
 
 type AppState = {
   routes: Route[];
   draftAirports: Airport[];
   units: DistanceUnit;
+  routeMode: RouteMode;
   unknownCodes: string[];
   dataReady: boolean;
   dataLoading: boolean;
@@ -19,6 +37,7 @@ type AppState = {
   commitDraft: () => void;
   removeRoute: (id: string) => void;
   setUnits: (units: DistanceUnit) => void;
+  setRouteMode: (mode: RouteMode) => void;
   loadRoutesFromCodes: (routeCodes: string[][], options?: { append?: boolean }) => void;
   initFromUrl: () => Promise<void>;
 };
@@ -37,6 +56,7 @@ export const useRouteStore = create<AppState>((set, get) => ({
   routes: [],
   draftAirports: [],
   units: readUnitsFromUrl(),
+  routeMode: readRouteMode(),
   unknownCodes: [],
   dataReady: false,
   dataLoading: false,
@@ -75,10 +95,10 @@ export const useRouteStore = create<AppState>((set, get) => ({
   clearDraft: () => set({ draftAirports: [] }),
 
   commitDraft: () => {
-    const { draftAirports, routes, units } = get();
+    const { draftAirports, routes, units, routeMode } = get();
     if (draftAirports.length < 2) return;
 
-    const route = buildRoute(draftAirports);
+    const route = buildRoute(draftAirports, undefined, routeMode);
     const nextRoutes = [...routes, route];
     set({ routes: nextRoutes, draftAirports: [] });
     syncUrl(nextRoutes, units);
@@ -97,8 +117,31 @@ export const useRouteStore = create<AppState>((set, get) => ({
     syncUrl(get().routes, units);
   },
 
+  setRouteMode: (mode) => {
+    if (get().routeMode === mode) return;
+
+    try {
+      localStorage.setItem(ROUTE_MODE_KEY, mode);
+    } catch {
+      // localStorage unavailable
+    }
+
+    const applyMode = () => {
+      const { routes } = get();
+      set({ routeMode: mode, routes: rebuildRoutes(routes, mode) });
+    };
+
+    if (mode === "airway") {
+      void ensureNavGraphLoaded().finally(applyMode);
+      return;
+    }
+
+    applyMode();
+  },
+
   loadRoutesFromCodes: (routeCodes, options?: { append?: boolean }) => {
     const existingRoutes = get().routes;
+    const routeMode = get().routeMode;
     const unknown: string[] = [];
     const newRoutes: Route[] = [];
 
@@ -106,7 +149,7 @@ export const useRouteStore = create<AppState>((set, get) => ({
       const { resolved, unknown: missing } = airportIndex.resolveCodes(codes);
       unknown.push(...missing);
       if (resolved.length >= 2) {
-        newRoutes.push(buildRoute(resolved));
+        newRoutes.push(buildRoute(resolved, undefined, routeMode));
       }
     }
 
@@ -125,6 +168,16 @@ export const useRouteStore = create<AppState>((set, get) => ({
     await get().ensureDataLoaded();
     if (get().dataReady) {
       get().loadRoutesFromCodes(routeCodes);
+    }
+
+    if (get().routeMode === "airway") {
+      const loaded = await ensureNavGraphLoaded();
+      if (loaded) {
+        const { routes, routeMode } = get();
+        if (routes.length > 0) {
+          set({ routes: rebuildRoutes(routes, routeMode) });
+        }
+      }
     }
   },
 }));

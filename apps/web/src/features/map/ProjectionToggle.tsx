@@ -12,7 +12,7 @@ export function ProjectionToggle() {
 
   return (
     <div
-      className="absolute top-3 left-3 z-10 flex rounded-lg border border-slate-600/80 bg-slate-900/90 p-0.5 shadow-lg backdrop-blur-sm"
+      className="flex rounded-lg border border-slate-600/80 bg-slate-900/90 p-0.5 shadow-lg backdrop-blur-sm"
       role="group"
       aria-label="Map projection"
     >

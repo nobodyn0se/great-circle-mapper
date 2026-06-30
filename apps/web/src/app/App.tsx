@@ -23,7 +23,7 @@ export function App() {
         <header>
           <h1 className="text-xl font-semibold text-white">Great Circle Mapper</h1>
           <p className="mt-1 text-sm text-slate-400">
-            Plan multi-leg routes with great-circle distances.
+            Plan multi-leg routes with great-circle or airway distances.
           </p>
         </header>
 

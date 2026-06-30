@@ -17,6 +17,7 @@ import { ROUTE_COLORS } from "@/lib/route-engine";
 import { allMapAirports, useRouteStore } from "@/stores/route-store";
 import { useMapStore } from "@/stores/map-store";
 import { ProjectionToggle } from "@/features/map/ProjectionToggle";
+import { RouteModeToggle } from "@/features/map/RouteModeToggle";
 import { MapControls, flyHomeView } from "@/features/map/MapControls";
 import {
   applyMapProjection,
@@ -46,6 +47,19 @@ function airportDescription(airport: Airport, code: string): string {
   return `<strong>${code}</strong><br/>${airport.name}<br/><span style="opacity:.75">${airport.city}, ${airport.country}</span>`;
 }
 
+function segmentPositions(segment: Route["segments"][number]): number[] {
+  const coords: number[] = [segment.from.lon, segment.from.lat];
+
+  if (segment.path) {
+    for (const fix of segment.path) {
+      coords.push(fix.lon, fix.lat);
+    }
+  }
+
+  coords.push(segment.to.lon, segment.to.lat);
+  return coords;
+}
+
 function syncRouteSegments(viewer: Viewer, routes: Route[]): void {
   const desiredIds = new Set<string>();
 
@@ -56,12 +70,7 @@ function syncRouteSegments(viewer: Viewer, routes: Route[]): void {
       const id = segmentEntityId(route.id, segmentIndex);
       desiredIds.add(id);
 
-      const positions = Cartesian3.fromDegreesArray([
-        segment.from.lon,
-        segment.from.lat,
-        segment.to.lon,
-        segment.to.lat,
-      ]);
+      const positions = Cartesian3.fromDegreesArray(segmentPositions(segment));
 
       const existing = viewer.entities.getById(id);
       if (existing?.polyline) {
@@ -256,7 +265,10 @@ export function CesiumView() {
 
   return (
     <div className="relative h-full w-full [&_.cesium-viewer-toolbar]:hidden [&_.cesium-viewer-bottom]:left-2 [&_.cesium-viewer-bottom]:right-auto">
-      <ProjectionToggle />
+      <div className="absolute top-3 left-3 z-10 flex flex-col gap-2">
+        <ProjectionToggle />
+        <RouteModeToggle />
+      </div>
       <MapControls viewer={viewer} onHome={handleHome} />
       {mapError ? (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/90 p-6 text-center">

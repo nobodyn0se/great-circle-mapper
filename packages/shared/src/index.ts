@@ -21,11 +21,21 @@ export type Airport = {
   type: string;
 };
 
+export type LatLon = {
+  lat: number;
+  lon: number;
+};
+
+/** great-circle = direct geodesic; airway = published airway path when nav data is available */
+export type RouteMode = "great-circle" | "airway";
+
 export type RouteSegment = {
   from: Airport;
   to: Airport;
   distanceKm: number;
   typicalBlockMinutes: number;
+  /** Intermediate fixes along an airway path (endpoints excluded). Omitted for direct great-circle legs. */
+  path?: LatLon[];
 };
 
 export type Route = {
