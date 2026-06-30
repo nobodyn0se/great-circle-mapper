@@ -33,6 +33,7 @@ Optional: copy `apps/web/.env.example` to `apps/web/.env` and set `VITE_CESIUM_I
 | `pnpm dev` | Start Vite dev server |
 | `pnpm build` | Production build (`apps/web/dist`) |
 | `pnpm data:build` | Download OurAirports CSV and rebuild search artifacts |
+| `pnpm data:build:nav` | Download FAA NASR (or use `--nasr=`), build `nav-graph.json.gz` (~1.2 MB) |
 | `pnpm typecheck` | Typecheck all packages |
 | `pnpm --filter @gcm/shared test` | Flight-time unit tests |
 
@@ -48,9 +49,19 @@ ICAO resolution uses `ident` → `gps_code` (fixes the v1 bug where `icao_code`-
 
 Airport `.gz` artifacts are committed to git so production deploys do not need to run `pnpm data:build`. Re-run that command when refreshing OurAirports data.
 
-### Airway routing (future)
+### Airway nav graph (FAA NASR)
 
-Airway mode is wired in the UI and route engine. When `apps/web/public/data/nav-graph.json.gz` is added by a future CIFP/nav-graph pipeline, the app will load it automatically and route along published fixes. Until then, airway mode falls back to great-circle distances and paths.
+Airway mode uses `apps/web/public/data/nav-graph.json.gz` — fixes and airway segment edges built from the free [FAA 28-day NASR subscription](https://www.faa.gov/air_traffic/flight_info/aeronav/aero_data/NASR_Subscription/) (Victor, Jet, RNAV Q/T routes). Coverage is **US-centric**; international routes may fall back to great-circle.
+
+```bash
+pnpm data:build:nav
+# or with a local NASR extract:
+pnpm --filter @gcm/data-pipeline build:nav -- --nasr=/path/to/28DaySubscription --output=apps/web/public/data
+```
+
+The first run downloads ~240 MB from FAA (cached in `.cache/nasr/`). Commit `nav-graph.json.gz` so production deploys do not need to rebuild it.
+
+Without `nav-graph.json.gz`, airway mode falls back to great-circle routing.
 
 ## Deployment (Cloudflare Pages)
 

@@ -3,10 +3,13 @@
   "source": "https://davidmegginson.github.io/ourairports-data/airports.csv",
   "counts": {
     "searchable": 40809,
-    "byCode": 49114
+    "byCode": 49114,
+    "navFixes": 71555,
+    "navEdges": 25682
   },
   "files": {
     "search": "airports.search.json.gz",
-    "byCode": "airports.by-code.json.gz"
+    "byCode": "airports.by-code.json.gz",
+    "navGraph": "nav-graph.json.gz"
   }
 }

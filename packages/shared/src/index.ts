@@ -54,10 +54,13 @@ export type DataManifest = {
   counts: {
     searchable: number;
     byCode: number;
+    navFixes?: number;
+    navEdges?: number;
   };
   files: {
     search: string;
     byCode: string;
+    navGraph?: string;
   };
 };
 
@@ -97,3 +100,6 @@ export {
   formatFlightTime,
   FLIGHT_TIME_ASSUMPTIONS,
 } from "./flight-time";
+
+export type { NavFix, NavEdge, NavGraph } from "./nav-graph";
+export { FAA_NASR_SUBSCRIPTION_URL } from "./nav-graph";

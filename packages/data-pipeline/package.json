@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "tsx src/cli.ts",
+    "build:nav": "tsx src/build-nav-cli.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

@@ -10,3 +10,4 @@ dist
 coverage
 apps/web/public/cesiumStatic
 .pnpm-store
+.cache
